@@ -1,0 +1,332 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Quicksand:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Primary - Dark Navy Blue (from PDF) */
+    --primary: 215 35% 18%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Background - Dark Slate */
+    --background: 215 35% 15%;
+    --foreground: 0 0% 100%;
+
+    /* Card - Slightly lighter slate */
+    --card: 215 30% 20%;
+    --card-foreground: 0 0% 100%;
+
+    /* Popover */
+    --popover: 215 30% 20%;
+    --popover-foreground: 0 0% 100%;
+
+    /* Secondary - Lighter slate for pills/buttons */
+    --secondary: 215 25% 28%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Muted - Subtle gray */
+    --muted: 215 20% 25%;
+    --muted-foreground: 215 15% 65%;
+
+    /* Accent - Orange/Red for highlights */
+    --accent: 15 90% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Success - Green */
+    --success: 142 76% 42%;
+    --success-foreground: 0 0% 100%;
+
+    /* Destructive */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Premium - Orange gradient */
+    --premium-start: 38 92% 55%;
+    --premium-end: 24 95% 53%;
+
+    /* Border */
+    --border: 215 20% 30%;
+    --input: 215 20% 30%;
+    --ring: 15 90% 55%;
+
+    --radius: 0.75rem;
+
+    /* Sidebar */
+    --sidebar-background: 215 35% 12%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 15 90% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 25% 28%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 215 20% 30%;
+    --sidebar-ring: 15 90% 55%;
+  }
+
+  .dark {
+    /* Same as light - app is always dark themed */
+    --primary: 215 35% 18%;
+    --primary-foreground: 0 0% 100%;
+    
+    --background: 215 35% 15%;
+    --foreground: 0 0% 100%;
+
+    --card: 215 30% 20%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 215 30% 20%;
+    --popover-foreground: 0 0% 100%;
+
+    --secondary: 215 25% 28%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 215 20% 25%;
+    --muted-foreground: 215 15% 65%;
+
+    --accent: 15 90% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --success: 142 76% 42%;
+    --success-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 215 20% 30%;
+    --input: 215 20% 30%;
+    --ring: 15 90% 55%;
+
+    --sidebar-background: 215 35% 12%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 15 90% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 25% 28%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 215 20% 30%;
+    --sidebar-ring: 15 90% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-bold;
+  }
+}
+
+@layer components {
+  .gradient-primary {
+    @apply bg-background;
+  }
+
+  .gradient-premium {
+    @apply bg-gradient-to-r from-amber-500 to-orange-500;
+  }
+
+  .gradient-story-card {
+    @apply bg-gradient-to-b from-transparent via-transparent to-black/80;
+  }
+
+  .btn-social {
+    @apply w-full py-4 px-6 rounded-lg font-semibold text-base flex items-center justify-center gap-3 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border;
+  }
+
+  .btn-google {
+    @apply btn-social bg-white text-gray-800 border-gray-200 hover:bg-gray-50;
+  }
+
+  .btn-facebook {
+    @apply btn-social bg-[#1877F2] text-white border-[#1877F2] hover:bg-[#166FE5];
+  }
+
+  .btn-register {
+    @apply btn-social bg-transparent text-white border-white/50 hover:bg-white/10;
+  }
+
+  .btn-admin {
+    @apply w-full py-3 px-6 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-all duration-200 text-muted-foreground hover:text-foreground;
+  }
+
+  .story-card {
+    @apply relative overflow-hidden rounded-xl shadow-lg transition-all duration-300 hover:scale-[1.03] hover:shadow-xl cursor-pointer;
+  }
+
+  .story-card-image {
+    @apply w-full h-full object-cover;
+  }
+
+  .story-card-overlay {
+    @apply absolute inset-0 gradient-story-card;
+  }
+
+  .story-card-content {
+    @apply absolute bottom-0 left-0 right-0 p-3 text-white;
+  }
+
+  .category-pill {
+    @apply px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer border;
+  }
+
+  .category-pill-active {
+    @apply category-pill bg-secondary text-white border-white/30;
+  }
+
+  .category-pill-inactive {
+    @apply category-pill bg-transparent text-muted-foreground border-border hover:text-white hover:border-white/30;
+  }
+
+  .premium-badge {
+    @apply absolute top-2 right-2 px-2 py-1 rounded-md text-xs font-bold gradient-premium text-white shadow-md flex items-center gap-1;
+  }
+
+  .free-badge {
+    @apply absolute top-2 right-2 px-2 py-1 rounded-md text-xs font-bold bg-success text-white shadow-md;
+  }
+
+  .nav-item {
+    @apply flex flex-col items-center gap-1 p-2 text-muted-foreground transition-colors duration-200;
+  }
+
+  .nav-item-active {
+    @apply nav-item text-white;
+  }
+
+  .mobile-container {
+    @apply max-w-md mx-auto min-h-screen relative bg-background;
+  }
+
+  .page-padding {
+    @apply px-5 py-4;
+  }
+
+  .section-title {
+    @apply text-base font-bold text-foreground mb-3 flex items-center justify-between;
+  }
+
+  .glass-effect {
+    @apply bg-card/80 backdrop-blur-md;
+  }
+
+  .floating-animation {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .fade-in {
+    animation: fadeIn 0.5s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .slide-up {
+    animation: slideUp 0.4s ease-out;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .back-button {
+    @apply flex items-center gap-1 text-accent font-semibold text-sm hover:opacity-80 transition-opacity;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Safe area utilities for mobile devices with notch/home indicator */
+  .safe-area-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .safe-area-top {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+
+  .safe-area-left {
+    padding-left: max(0px, env(safe-area-inset-left));
+  }
+
+  .safe-area-right {
+    padding-right: max(0px, env(safe-area-inset-right));
+  }
+
+  .safe-area-all {
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-right: max(0px, env(safe-area-inset-right));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    padding-left: max(0px, env(safe-area-inset-left));
+  }
+
+  /* Margin variants */
+  .safe-margin-bottom {
+    margin-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .safe-margin-top {
+    margin-top: max(1rem, env(safe-area-inset-top));
+  }
+
+  /* Fixed positioning with safe area */
+  .fixed-safe-bottom {
+    bottom: max(0px, env(safe-area-inset-bottom));
+  }
+
+  .fixed-safe-top {
+    top: max(0px, env(safe-area-inset-top));
+  }
+
+  /* Overflow wrap for long text */
+  .overflow-wrap-anywhere {
+    overflow-wrap: anywhere;
+  }
+
+  /* Touch action for better mobile scrolling */
+  .touch-pan-y {
+    touch-action: pan-y;
+  }
+
+  .touch-pan-x {
+    touch-action: pan-x;
+  }
+
+  /* Prevent text selection on mobile buttons */
+  .no-select {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* Hardware acceleration for smooth animations */
+  .gpu-accelerated {
+    transform: translateZ(0);
+    will-change: transform;
+  }
+}

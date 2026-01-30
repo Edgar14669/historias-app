@@ -1,0 +1,7 @@
+project_id = "cbrxjmtjdbrrnjwuyibp"
+
+[functions.revenuecat-webhook]
+verify_jwt = false
+
+[functions.validate-purchase]
+verify_jwt = false
