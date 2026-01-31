@@ -20,7 +20,6 @@ import {
   serverTimestamp 
 } from "firebase/firestore";
 
-// Unified UserProfile interface matching your Dashboard needs
 interface UserProfile {
   id: string;
   email: string | null;
@@ -28,7 +27,7 @@ interface UserProfile {
   avatar_url: string | null;
   is_subscribed: boolean;
   isAdmin: boolean;
-  is_admin?: boolean; // Compatibilidade
+  is_admin?: boolean;
   role?: string;
 }
 
@@ -48,7 +47,6 @@ interface AppContextType {
   isInMyList: (storyId: string) => boolean;
   language: string;
   setLanguage: (lang: string) => void;
-  // Compatibilidade com código antigo que possa usar session
   session: any;
 }
 
@@ -59,6 +57,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [myList, setMyList] = useState<string[]>([]);
   const [language, setLanguage] = useState("pt");
+  
   const [isLoading, setIsLoading] = useState(true);
   const [authReady, setAuthReady] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -66,79 +65,79 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const isLoggedIn = user !== null;
 
-  // Função para buscar ou criar o perfil do usuário no Firestore
-  // MUDANÇA: Agora usa a coleção 'users' para bater com o Dashboard
-  const fetchOrCreateProfile = async (currentUser: User) => {
-    try {
-      const docRef = doc(db, "users", currentUser.uid);
-      const docSnap = await getDoc(docRef);
+  useEffect(() => {
+    // Definindo as funções DENTRO do useEffect para evitar avisos de dependência
+    const fetchOrCreateProfile = async (currentUser: User) => {
+      try {
+        const docRef = doc(db, "users", currentUser.uid);
+        const docSnap = await getDoc(docRef);
 
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        // Normaliza os dados
-        const userProfile: UserProfile = {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          const userProfile: UserProfile = {
             id: docSnap.id,
             email: data.email || currentUser.email,
             display_name: data.display_name || data.name || currentUser.displayName,
             avatar_url: data.avatar_url || currentUser.photoURL,
             is_subscribed: !!data.is_subscribed,
-            isAdmin: !!data.isAdmin || !!data.is_admin,
-            is_admin: !!data.isAdmin || !!data.is_admin
-        };
-        return userProfile;
-      } else {
-        // Cria perfil novo na coleção 'users'
-        const newProfile = {
-          email: currentUser.email,
-          display_name: currentUser.displayName || "Usuário sem nome",
-          avatar_url: currentUser.photoURL,
-          created_at: serverTimestamp(),
-          is_subscribed: false,
-          isAdmin: false,
-          is_admin: false, // Compatibilidade
-          role: "user"
-        };
-        await setDoc(docRef, newProfile);
-        
-        return { id: currentUser.uid, ...newProfile } as UserProfile;
+            isAdmin: !!data.isAdmin || !!data.is_admin || data.role === 'admin',
+            is_admin: !!data.isAdmin || !!data.is_admin,
+            role: data.role || "user"
+          };
+          return userProfile;
+        } else {
+          const newProfile = {
+            email: currentUser.email,
+            display_name: currentUser.displayName || "Usuário sem nome",
+            avatar_url: currentUser.photoURL,
+            created_at: serverTimestamp(),
+            is_subscribed: false,
+            isAdmin: false,
+            is_admin: false,
+            role: "user"
+          };
+          await setDoc(docRef, newProfile);
+          return { id: currentUser.uid, ...newProfile } as UserProfile;
+        }
+      } catch (e) {
+        console.error("[AppContext] Erro ao buscar perfil:", e);
+        return null;
       }
-    } catch (e) {
-      console.error("[AppContext] Erro ao buscar perfil:", e);
-      return null;
-    }
-  };
+    };
 
-  const fetchFavorites = async (userId: string) => {
-    try {
-      const q = query(collection(db, "favorite_stories"), where("user_id", "==", userId));
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => doc.data().story_id as string);
-    } catch (e) {
-      console.error("[AppContext] Erro ao buscar favoritos:", e);
-      return [];
-    }
-  };
+    const fetchFavorites = async (userId: string) => {
+      try {
+        const q = query(collection(db, "favorite_stories"), where("user_id", "==", userId));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => doc.data().story_id as string);
+      } catch (e) {
+        console.error("[AppContext] Erro ao buscar favoritos:", e);
+        return [];
+      }
+    };
 
-  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
-      setIsLoading(false);
+      setIsLoading(false); // Auth inicial resolvido
       setAuthReady(true);
 
       if (currentUser) {
         setAdminReady(false);
-        
-        const [userProfile, favorites] = await Promise.all([
-          fetchOrCreateProfile(currentUser),
-          fetchFavorites(currentUser.uid)
-        ]);
+        try {
+          const [userProfile, favorites] = await Promise.all([
+            fetchOrCreateProfile(currentUser),
+            fetchFavorites(currentUser.uid)
+          ]);
 
-        setProfile(userProfile);
-        setMyList(favorites);
-        
-        // Verifica admin
-        setIsAdmin(userProfile?.isAdmin || false);
-        setAdminReady(true);
+          setProfile(userProfile);
+          setMyList(favorites);
+          
+          setIsAdmin(userProfile?.isAdmin || false);
+        } catch (error) {
+          console.error("Erro ao carregar dados do usuário:", error);
+        } finally {
+          setAdminReady(true);
+        }
       } else {
         setProfile(null);
         setMyList([]);

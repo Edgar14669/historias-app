@@ -40,15 +40,10 @@ const ProfilePage = () => {
 
   // Monta a lista de menus dinamicamente
   const menuItems = [
-    // Item exclusivo de Admin
-    ...(isAdmin ? [{ 
-      icon: Shield, 
-      label: "Painel Administrativo", 
-      route: "/admin/dashboard",
-      color: "text-purple-500" // Destaque visual
-    }] : []),
+    // CORREÇÃO: "Minha Lista" agora usa tradução t("myList")
     
-    { icon: Heart, label: "Minha Lista", route: "/mylist" },
+    // CORREÇÃO: Removido o botão de "Painel Administrativo" daqui conforme solicitado
+    
     { icon: CreditCard, label: t("premium"), route: "/premium" },
     { icon: FileText, label: t("privacyPolicy"), route: "/privacy-policy" },
     { icon: FileText, label: t("termsOfUse"), route: "/terms-of-use" },
@@ -86,7 +81,6 @@ const ProfilePage = () => {
     navigate(-1);
   };
 
-  // Se estiver carregando o contexto inicial, mostra spinner
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -95,7 +89,6 @@ const ProfilePage = () => {
     );
   }
 
-  // Dados reais do usuário
   const displayName = profile?.display_name || user?.displayName || user?.email?.split("@")[0] || t("guest");
   const avatarUrl = profile?.avatar_url || user?.photoURL;
   const userEmail = profile?.email || user?.email;
