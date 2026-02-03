@@ -3,10 +3,10 @@ import { motion } from "framer-motion";
 import { ChevronLeft, AlertTriangle, CheckCircle, ExternalLink, Apple, Smartphone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import BottomNavLayout from "@/components/BottomNavLayout";
-// import { toast } from "sonner"; // Não estava sendo usado diretamente, mas pode descomentar se precisar
 import { useTranslation } from "@/hooks/useTranslation";
-import { useRevenueCat } from "@/hooks/useRevenueCat";
 import { useApp } from "@/contexts/AppContext";
+import { Capacitor } from "@capacitor/core"; // MUDANÇA: Import direto do Capacitor
+
 // MUDANÇA: Imports do Firebase
 import { db } from "@/integrations/firebase/client";
 import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
@@ -15,28 +15,30 @@ const CancelSubscriptionPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { user } = useApp();
-  const { isNativePlatform, getManagementUrl } = useRevenueCat();
+  
+  // MUDANÇA: Removemos o hook do RevenueCat e usamos Capacitor direto
+  const isNativePlatform = Capacitor.isNativePlatform();
   
   const [isCancelled, setIsCancelled] = useState(false);
-  const [managementUrl, setManagementUrl] = useState<string | null>(null);
   const [subscriptionInfo, setSubscriptionInfo] = useState<{
     product_id: string;
     current_period_end: string | null;
     store: string | null;
   } | null>(null);
 
-  // Fetch subscription info and management URL
+  // Fetch subscription info
   useEffect(() => {
     const fetchSubscriptionInfo = async () => {
-      if (!user?.uid) return;
+      // MUDANÇA: Correção para acessar o ID do usuário de forma segura
+      const userId = user?.uid || (user as any)?.id;
+      
+      if (!userId) return;
 
       try {
-        // MUDANÇA: Busca no Firebase Firestore
-        // "subscriptions" deve ser a coleção onde salvamos os dados do RevenueCat/Webhook
         const subsRef = collection(db, "subscriptions");
         const q = query(
           subsRef, 
-          where("user_id", "==", user.uid),
+          where("user_id", "==", userId),
           where("status", "in", ["active", "trial", "intro_offer"]),
           orderBy("created_at", "desc"),
           limit(1)
@@ -48,35 +50,28 @@ const CancelSubscriptionPage = () => {
           const data = snapshot.docs[0].data();
           setSubscriptionInfo({
             product_id: data.product_id,
-            current_period_end: data.current_period_end?.toDate?.()?.toISOString() || data.current_period_end, // Trata Timestamp do Firebase
+            current_period_end: data.current_period_end?.toDate?.()?.toISOString() || data.current_period_end,
             store: data.store
           });
         }
       } catch (error) {
         console.error("Error fetching subscription:", error);
       }
-
-      // Get management URL from RevenueCat
-      if (isNativePlatform) {
-        const url = await getManagementUrl();
-        setManagementUrl(url);
-      }
     };
 
     fetchSubscriptionInfo();
-  }, [user?.uid, isNativePlatform, getManagementUrl]); // user.uid em vez de user.id
+  }, [user]);
 
   const handleOpenManagement = () => {
-    if (managementUrl) {
-      window.open(managementUrl, "_blank");
-    } else {
-      // Fallback URLs for app stores
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || subscriptionInfo?.store === "app_store";
-      const url = isIOS
-        ? "https://apps.apple.com/account/subscriptions"
-        : "https://play.google.com/store/account/subscriptions";
-      window.open(url, "_blank");
-    }
+    // MUDANÇA: URLs diretas para gerenciamento de assinatura (Padrão Nativo)
+    const isIOS = Capacitor.getPlatform() === 'ios';
+    
+    // Links oficiais para gerenciamento de assinaturas
+    const url = isIOS
+      ? "https://apps.apple.com/account/subscriptions" // Link profundo do iOS
+      : "https://play.google.com/store/account/subscriptions"; // Link profundo do Android
+      
+    window.open(url, "_blank");
   };
 
   const formatDate = (dateString: string | null) => {
@@ -90,8 +85,9 @@ const CancelSubscriptionPage = () => {
   };
 
   const getProductName = (productId: string) => {
-    if (productId.includes("monthly")) return t("monthlyPlan");
-    if (productId.includes("annual")) return t("yearlyPlan");
+    if (!productId) return "Premium";
+    if (productId.includes("monthly") || productId.includes("mensal")) return t("monthlyPlan");
+    if (productId.includes("annual") || productId.includes("anual")) return t("yearlyPlan");
     return "Premium";
   };
 
@@ -147,7 +143,7 @@ const CancelSubscriptionPage = () => {
             <Smartphone className="w-6 h-6 text-blue-500 flex-shrink-0" />
             <div>
               <h3 className="font-semibold text-blue-500 mb-1">
-                {subscriptionInfo?.store === "app_store" ? "App Store" : "Play Store"}
+                {subscriptionInfo?.store === "app_store" || Capacitor.getPlatform() === 'ios' ? "App Store" : "Play Store"}
               </h3>
               <p className="text-sm text-muted-foreground">
                 {t("cancelViaStore")}
@@ -207,7 +203,7 @@ const CancelSubscriptionPage = () => {
             onClick={handleOpenManagement}
             className="w-full py-4 rounded-xl bg-destructive/20 text-destructive font-semibold hover:bg-destructive/30 transition-colors flex items-center justify-center gap-2"
           >
-            {subscriptionInfo?.store === "app_store" ? (
+            {(subscriptionInfo?.store === "app_store" || Capacitor.getPlatform() === 'ios') ? (
               <>
                 <Apple className="w-5 h-5" />
                 {t("openInAppStore")}
@@ -219,11 +215,6 @@ const CancelSubscriptionPage = () => {
               </>
             )}
           </button>
-
-          {/* Note about access */}
-          <p className="text-center text-xs text-muted-foreground">
-            {t("cancelSuccessText")}
-          </p>
         </motion.div>
       </div>
     </BottomNavLayout>

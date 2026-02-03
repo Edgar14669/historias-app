@@ -1,0 +1,83 @@
+{
+  "project_info": {
+    "project_number": "929017910323",
+    "firebase_url": "https://historias-biblicas-1b601-default-rtdb.firebaseio.com",
+    "project_id": "historias-biblicas-1b601",
+    "storage_bucket": "historias-biblicas-1b601.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:929017910323:android:6be22826dae0f084857f46",
+        "android_client_info": {
+          "package_name": "com.historiasbiblicas.v2"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "929017910323-q7svseto83a593lsvnj4g463pb8ns33h.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDxXoGi0T9caTPMRxV2azydLDe3oGS8MU4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "929017910323-8cbdfu8ns634pqas64l5u1uek8gqtqgv.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "929017910323-l2jf7a764v2n10l50pkfpchflslecmi1.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.Historias-biblicas.ios"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:929017910323:android:06a043589f709c99857f46",
+        "android_client_info": {
+          "package_name": "com.negozack.Historiasbiblicas"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "929017910323-q7svseto83a593lsvnj4g463pb8ns33h.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDxXoGi0T9caTPMRxV2azydLDe3oGS8MU4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "929017910323-8cbdfu8ns634pqas64l5u1uek8gqtqgv.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "929017910323-l2jf7a764v2n10l50pkfpchflslecmi1.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.Historias-biblicas.ios"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Capacitor } from "@capacitor/core";
 import { AppProvider, useApp } from "@/contexts/AppContext";
 import { useNativeInit } from "@/hooks/useNativeInit";
+// MUDANÇA: Importamos o hook de notificações que criamos
+import { useNotifications } from "@/hooks/useNotifications";
 import AdminRoute from "@/routes/AdminRoute";
 import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
@@ -93,6 +95,9 @@ const AppRoutes = () => {
   
   // Initialize native app (status bar, splash screen, etc.)
   useNativeInit();
+  
+  // MUDANÇA: Ativa o sistema de notificações (pede permissão e salva token)
+  useNotifications();
 
   return (
     <Routes>

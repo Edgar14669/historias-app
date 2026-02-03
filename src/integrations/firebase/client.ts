@@ -1,14 +1,12 @@
 import { initializeApp } from "firebase/app";
-import { 
-  getAuth, 
-  setPersistence, 
-  browserLocalPersistence 
-} from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
+import { getFirestore, initializeFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+// ADICIONE: Import do Messaging
+import { getMessaging } from "firebase/messaging"; 
 
-// Configuração do Firebase (Projeto: historias-biblicas-1b601)
 const firebaseConfig = {
+  // ... suas configurações existentes (mantenha igual)
   apiKey: "AIzaSyCL2Sr5NDkTiMrhZlO_6cdia8W_1YRkD9Y",
   authDomain: "historias-biblicas-1b601.firebaseapp.com",
   databaseURL: "https://historias-biblicas-1b601-default-rtdb.firebaseio.com",
@@ -18,21 +16,20 @@ const firebaseConfig = {
   appId: "1:929017910323:web:2e031bb046daac19857f46"
 };
 
-// Inicializando o Firebase
 const app = initializeApp(firebaseConfig);
-
-// Ferramentas do Firebase
 const auth = getAuth(app);
-const db = getFirestore(app);
+// Mantendo sua configuração de banco corrigida
+const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true, 
+}, "apphistoriasfinal");
 const storage = getStorage(app);
 
-// Configuração de Persistência (Para o login não expirar ao fechar a aba)
-setPersistence(auth, browserLocalPersistence)
-  .then(() => {
-    console.log("Persistência de sessão: LOCAL (Conectado a historias-biblicas)");
-  })
-  .catch((error) => {
-    console.error("Erro ao configurar persistência:", error);
-  });
+// ADICIONE: Inicialização do Messaging
+const messaging = getMessaging(app);
 
-export { auth, db, storage };
+setPersistence(auth, browserLocalPersistence)
+  .then(() => console.log("Persistência: LOCAL"))
+  .catch((e) => console.error("Erro persistência:", e));
+
+// ADICIONE: export do messaging
+export { auth, db, storage, messaging };

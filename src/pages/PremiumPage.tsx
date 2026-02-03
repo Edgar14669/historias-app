@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, Crown, Check, Loader2, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -7,45 +7,32 @@ import MathCaptcha from "@/components/MathCaptcha";
 import premiumMonthly from "@/assets/premium-monthly.jpg";
 import premiumAnnual from "@/assets/premium-annual.jpg";
 import { useTranslation } from "@/hooks/useTranslation";
-import { useRevenueCat, Package } from "@/hooks/useRevenueCat";
+// MUDANÇA: Importando o hook nativo que criamos
+import { useNativePurchases } from "@/hooks/useNativePurchases";
 import { useApp } from "@/contexts/AppContext";
 import { toast } from "sonner";
 
 const PremiumPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { user, profile } = useApp();
+  const { profile, user } = useApp(); // MUDANÇA: user trazido do AppContext para verificar login
+  
+  // MUDANÇA: Usando o hook nativo
   const { 
-    isNativePlatform, 
+    isNative, 
     isLoading, 
-    offerings, 
-    purchasePackage, 
-    restorePurchases,
-    initialize,
-    identifyUser
-  } = useRevenueCat();
+    products, 
+    purchase, 
+    restore 
+  } = useNativePurchases();
   
   const [purchasingPackage, setPurchasingPackage] = useState<string | null>(null);
   const [showCaptcha, setShowCaptcha] = useState(false);
   const [pendingPackageId, setPendingPackageId] = useState<string | null>(null);
 
- // Initialize RevenueCat when user is available
-  useEffect(() => {
-    // MUDANÇA: user.uid em vez de user.id (Firebase)
-    const userId = user?.uid || (user as any)?.id; // Fallback seguro
-    if (userId) {
-      initialize(userId);
-      identifyUser(userId);
-    }
-  }, [user, initialize, identifyUser]);
-
-  // Get packages from offerings or use fallback
-  const monthlyPackage = offerings[0]?.availablePackages.find(
-    p => p.identifier === "$rc_monthly" || p.product.identifier.includes("monthly")
-  );
-  const annualPackage = offerings[0]?.availablePackages.find(
-    p => p.identifier === "$rc_annual" || p.product.identifier.includes("annual")
-  );
+  // MUDANÇA: Buscando os produtos pelos IDs definidos no hook useNativePurchases
+  const monthlyProduct = products.find(p => p.id === 'historias_mensal');
+  const annualProduct = products.find(p => p.id === 'historias_anual');
 
   const benefits = [
     t("unlimitedAccess"),
@@ -58,7 +45,7 @@ const PremiumPage = () => {
     navigate(-1);
   };
 
-  const handleSubscribeClick = (packageId: string) => {
+  const handleSubscribeClick = (productId: string) => {
     if (!user) {
       toast.error(t("loginRequired"));
       navigate("/login");
@@ -66,26 +53,30 @@ const PremiumPage = () => {
     }
 
     // Show CAPTCHA before proceeding
-    setPendingPackageId(packageId);
+    setPendingPackageId(productId);
     setShowCaptcha(true);
   };
 
   const handleCaptchaSuccess = async () => {
     if (!pendingPackageId) return;
 
-    if (!isNativePlatform) {
+    if (!isNative) {
       toast.info(t("purchaseNativeOnly"));
       return;
     }
 
     setPurchasingPackage(pendingPackageId);
-    const success = await purchasePackage(pendingPackageId);
-    setPurchasingPackage(null);
-    setPendingPackageId(null);
-
-    if (success) {
-      navigate("/profile");
-    }
+    
+    // MUDANÇA: Chama a função de compra do hook nativo
+    purchase(pendingPackageId);
+    
+    // O hook gerencia o loading global, mas limpamos o estado local após um tempo
+    // ou quando o hook retornar sucesso (via listener no hook)
+    setTimeout(() => {
+      setPurchasingPackage(null);
+      setPendingPackageId(null);
+      setShowCaptcha(false);
+    }, 3000);
   };
 
   const handleRestore = async () => {
@@ -93,25 +84,15 @@ const PremiumPage = () => {
       toast.error(t("loginRequired"));
       return;
     }
-
-    const success = await restorePurchases();
-    if (success) {
-      navigate("/profile");
-    }
+    // MUDANÇA: Função restore nativa
+    restore();
   };
 
-  const formatIntroOffer = (pkg: Package) => {
-    if (!pkg.product.introductoryPrice) return null;
-    
-    const intro = pkg.product.introductoryPrice;
-    const periodText = intro.periodUnit === "DAY" 
-      ? `${intro.periodNumberOfUnits} ${t("freeTrialDays")}`
-      : intro.priceString;
-    
-    return {
-      text: periodText,
-      isTrial: intro.price === 0,
-    };
+  // Helper para ofertas (Simplificado para o plugin nativo)
+  const getIntroOfferText = (product: any) => {
+    // O plugin nativo pode ter campos diferentes para intro price dependendo da plataforma
+    // Aqui assumimos que se houver um texto de introPrice, exibimos
+    return product?.introPrice || null;
   };
 
   // If user is already subscribed, show different content
@@ -239,26 +220,25 @@ const PremiumPage = () => {
                 className="w-full h-44 object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex flex-col items-center justify-end p-5">
-                {monthlyPackage && formatIntroOffer(monthlyPackage) && (
+                {monthlyProduct && getIntroOfferText(monthlyProduct) && (
                   <div className="px-3 py-1 bg-emerald-500 text-white text-xs font-bold rounded-full mb-2">
-                    {formatIntroOffer(monthlyPackage)?.isTrial 
-                      ? t("trialPeriod")
-                      : t("introOffer")}: {formatIntroOffer(monthlyPackage)?.text}
+                    {t("introOffer")}: {getIntroOfferText(monthlyProduct)}
                   </div>
                 )}
                 <h3 className="font-bold text-white text-lg">{t("monthlyPlan")}</h3>
                 <div className="flex items-baseline gap-1 mt-1">
                   <span className="text-3xl font-bold text-white">
-                    {monthlyPackage?.product.priceString || "R$ 14,90"}
+                    {/* MUDANÇA: .price no lugar de .product.priceString */}
+                    {monthlyProduct?.price || "R$ 14,90"}
                   </span>
                   <span className="text-white/70 text-sm">/{t("perMonth")}</span>
                 </div>
                 <button 
-                  onClick={() => handleSubscribeClick(monthlyPackage?.identifier || "$rc_monthly")}
+                  onClick={() => handleSubscribeClick(monthlyProduct?.id || "historias_mensal")}
                   disabled={isLoading || purchasingPackage !== null}
                   className="mt-4 px-10 py-2.5 bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-full font-semibold text-sm hover:from-amber-500 hover:to-orange-600 transition-all shadow-lg disabled:opacity-50 flex items-center gap-2"
                 >
-                  {purchasingPackage === (monthlyPackage?.identifier || "$rc_monthly") ? (
+                  {purchasingPackage === (monthlyProduct?.id || "historias_mensal") ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
                       {t("loadingPurchase")}
@@ -289,27 +269,26 @@ const PremiumPage = () => {
                 className="w-full h-44 object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex flex-col items-center justify-end p-5">
-                {annualPackage && formatIntroOffer(annualPackage) && (
+                {annualProduct && getIntroOfferText(annualProduct) && (
                   <div className="px-3 py-1 bg-emerald-500 text-white text-xs font-bold rounded-full mb-2">
-                    {formatIntroOffer(annualPackage)?.isTrial 
-                      ? t("trialPeriod")
-                      : t("introOffer")}: {formatIntroOffer(annualPackage)?.text}
+                    {t("introOffer")}: {getIntroOfferText(annualProduct)}
                   </div>
                 )}
                 <h3 className="font-bold text-white text-lg">{t("yearlyPlan")}</h3>
                 <div className="flex items-baseline gap-1 mt-1">
                   <span className="text-3xl font-bold text-white">
-                    {annualPackage?.product.priceString || "R$ 9,90"}
+                     {/* MUDANÇA: .price no lugar de .product.priceString */}
+                    {annualProduct?.price || "R$ 9,90"}
                   </span>
                   <span className="text-white/70 text-sm">/{t("perMonth")}</span>
                 </div>
                 <p className="text-white/60 text-xs mt-1">{t("total")} R$ 118,80</p>
                 <button 
-                  onClick={() => handleSubscribeClick(annualPackage?.identifier || "$rc_annual")}
+                  onClick={() => handleSubscribeClick(annualProduct?.id || "historias_anual")}
                   disabled={isLoading || purchasingPackage !== null}
                   className="mt-4 px-10 py-2.5 bg-gradient-to-r from-amber-400 to-orange-500 text-white rounded-full font-semibold text-sm hover:from-amber-500 hover:to-orange-600 transition-all shadow-lg disabled:opacity-50 flex items-center gap-2"
                 >
-                  {purchasingPackage === (annualPackage?.identifier || "$rc_annual") ? (
+                  {purchasingPackage === (annualProduct?.id || "historias_anual") ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
                       {t("loadingPurchase")}
@@ -324,7 +303,7 @@ const PremiumPage = () => {
         </div>
 
         {/* Restore Purchases */}
-        {isNativePlatform && (
+        {isNative && (
           <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

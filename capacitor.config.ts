@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.e22eaeb4e75b46b0becb0eed33435489',
-  appName: 'Stories App',
+  appId: 'com.historiasbiblicas.v2',
+  appName: 'Histórias Bíblicas',
   webDir: 'dist',
   // Development: Hot reload from Lovable preview
   // IMPORTANT: Remove this entire "server" block for production builds!
