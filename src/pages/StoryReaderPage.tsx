@@ -3,38 +3,34 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import DOMPurify from "dompurify";
-import { useStory } from "@/hooks/useStories";
+import { useStory, StoryPage } from "@/hooks/useStories";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useApp } from "@/contexts/AppContext";
 import { useToast } from "@/hooks/use-toast";
-// IMPORTANTE: Importando o hook de visualização
 import { useRecordStoryView } from "@/hooks/useStoryViews";
 
 const StoryReaderPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { profile } = useApp(); // Use profile instead of session/user
+  const { profile } = useApp();
   const { toast } = useToast();
   const [currentPage, setCurrentPage] = useState(0);
   const [currentImageError, setCurrentImageError] = useState(false);
 
   const { data: story, isLoading } = useStory(id);
-  
-  // Hook para gravar a visualização
   const { mutate: recordView } = useRecordStoryView();
 
-  // Efeito para registrar a view quando a história carrega
+  // Registrar visualização
   useEffect(() => {
     if (story && id) {
-       // Passa o ID da história e o ID do usuário (se estiver logado)
        recordView({ storyId: id, userId: profile?.id });
     }
   }, [story, id, profile, recordView]);
 
   const isSubscribed = profile?.is_subscribed === true;
 
-  // Redirect logic
+  // Lógica de Redirecionamento Premium
   useEffect(() => {
     if (story && story.is_premium && !isSubscribed) {
       toast({
@@ -62,30 +58,22 @@ const StoryReaderPage = () => {
     );
   }
 
-  if (story.is_premium && !isSubscribed) {
-    return (
-      <div className="mobile-container min-h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  // Use mock pages if story doesn't have pages
-  const pages = story.story_pages && story.story_pages.length > 0 
-    ? story.story_pages.sort((a, b) => a.page_number - b.page_number)
+  // Garantia de páginas (usa mock se estiver vazio)
+  const pages: StoryPage[] = story.story_pages && story.story_pages.length > 0 
+    ? [...story.story_pages].sort((a, b) => a.page_number - b.page_number)
     : [
-        { id: "1", content: "Era uma vez... (Conteúdo de teste, adicione páginas no admin)", page_number: 1, story_id: story.id, page_image: null },
+        { id: "1", content: "Era uma vez...", page_number: 1, story_id: story.id, page_image: null },
       ];
 
   const totalPages = pages.length;
-
   const currentPageData = pages[currentPage];
-  const pageImage = (currentPageData as any)?.page_image || (currentPageData as any)?.image_url;
-  const currentBackgroundImage = pageImage && pageImage.trim() !== '' ? pageImage : story.cover_url;
-
-  const getPageContent = (pageData: any) => {
-    return pageData.content;
-  };
+  
+  // EDIÇÃO: Lógica de imagem simplificada e robusta
+  // Como o hook já normalizou para page_image, usamos apenas ele.
+  const pageImage = currentPageData?.page_image;
+  const currentBackgroundImage = pageImage && pageImage.trim() !== '' 
+    ? pageImage 
+    : story.cover_url;
 
   const goToPrevious = () => {
     if (currentPage > 0) {
@@ -109,7 +97,7 @@ const StoryReaderPage = () => {
 
   return (
     <div className="mobile-container min-h-screen bg-background flex flex-col relative overflow-hidden">
-      {/* Background Image */}
+      {/* Background Image com Animação */}
       <div className="absolute inset-0 z-0">
         <AnimatePresence mode="wait">
           <motion.img
@@ -145,7 +133,7 @@ const StoryReaderPage = () => {
         <div className="w-10" />
       </motion.header>
 
-      {/* Content */}
+      {/* Content Area */}
       <div className="flex-1 flex flex-col justify-end relative z-10 min-h-0">
         <AnimatePresence mode="wait">
           <motion.div
@@ -160,7 +148,7 @@ const StoryReaderPage = () => {
               <div 
                 className="text-white text-lg leading-relaxed break-words prose prose-invert prose-p:my-2 prose-headings:my-3 prose-ul:my-2 prose-ol:my-2 max-w-none"
                 dangerouslySetInnerHTML={{ 
-                  __html: DOMPurify.sanitize(getPageContent(currentPageData), {
+                  __html: DOMPurify.sanitize(currentPageData.content, {
                     ALLOWED_TAGS: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'span', 'div', 'blockquote'],
                     ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'style'],
                   })
@@ -171,7 +159,7 @@ const StoryReaderPage = () => {
         </AnimatePresence>
       </div>
 
-      {/* Footer */}
+      {/* Navigation Footer */}
       <motion.footer
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -192,9 +180,7 @@ const StoryReaderPage = () => {
           </button>
 
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            <span className="text-white font-bold">
-              {currentPage + 1}
-            </span>
+            <span className="text-white font-bold">{currentPage + 1}</span>
             <span className="text-white/60">{t("of")}</span>
             <span className="text-white font-bold">{totalPages}</span>
           </div>

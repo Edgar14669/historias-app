@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { ChevronLeft, BookOpen, Heart, Share2, Lock, Play } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import { useStory, useStories } from "@/hooks/useStories";
-// import { useRecordStoryView } from "@/hooks/useStoryViews"; // Views temporariamente off
+import { useRecordStoryView } from "@/hooks/useStoryViews"; 
 import StoryCard from "@/components/StoryCard";
 import VideoPlayerModal from "@/components/VideoPlayerModal";
 import { useToast } from "@/hooks/use-toast";
@@ -13,29 +13,26 @@ import { useTranslation } from "@/hooks/useTranslation";
 const StoryDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { addToMyList, removeFromMyList, isInMyList, isLoggedIn, user, profile } = useApp();
+  const { addToMyList, removeFromMyList, isInMyList, isLoggedIn, profile } = useApp();
   const { toast } = useToast();
   const { t } = useTranslation();
-  const viewRecorded = useRef(false);
+  const viewRecorded = useRef<string | null>(null);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
-  // Check if user can access premium content
+  // Verificação de assinatura do perfil
   const isSubscribed = profile?.is_subscribed === true;
 
   const { data: story, isLoading } = useStory(id);
   const { data: allStories = [] } = useStories();
-  // const recordView = useRecordStoryView(); // Desativado
+  const recordView = useRecordStoryView();
   
-  // Record view when story is loaded
-  // Record view when story is loaded
+  // Efeito para registrar visualização (corrigido para não disparar em loop)
   useEffect(() => {
-    if (story && id && !viewRecorded.current) {
-      viewRecorded.current = true;
-      // recordView.mutate({ storyId: id, userId: user?.id }); // Desativado temporariamente
-      console.log("View recorded (mock):", id);
+    if (story && id && viewRecorded.current !== id) {
+      viewRecorded.current = id;
+      recordView.mutate({ storyId: id, userId: profile?.id });
     }
-    // REMOVIDO: user?.id da lista abaixo para parar o erro
-  }, [story, id]);
+  }, [story, id, profile?.id, recordView]);
   
   const relatedStories = allStories
     .filter((s) => s.category_id === story?.category_id && s.id !== id)
@@ -66,7 +63,6 @@ const StoryDetailPage = () => {
         description: t("loginToAddFavorites"),
         variant: "destructive",
       });
-      // navigate("/"); // Melhor não redirecionar drasticamente, apenas avisar
       return;
     }
     
@@ -113,7 +109,6 @@ const StoryDetailPage = () => {
   };
 
   const handleRead = () => {
-    // Check if story is premium and user is not subscribed
     if (story.is_premium && !isSubscribed) {
       toast({
         title: t("premiumContent"),
@@ -134,12 +129,15 @@ const StoryDetailPage = () => {
 
   const hasVideo = Boolean((story as any).video_url);
 
+  // EDIÇÃO: Padronização da imagem de capa usando cover_url vindo do hook
+  const coverImageSrc = story.cover_url || "/placeholder.svg";
+
   return (
     <div className="mobile-container min-h-screen">
       {/* Hero Image */}
       <div className="relative h-80">
         <img
-          src={story.cover_url || "/placeholder.svg"}
+          src={coverImageSrc}
           alt={story.title}
           className="w-full h-full object-cover"
         />
@@ -180,15 +178,11 @@ const StoryDetailPage = () => {
         </motion.div>
 
         {/* Badge */}
-        {story.is_premium ? (
-          <div className="absolute bottom-20 left-5 px-3 py-1 rounded-full gradient-premium text-white text-sm font-bold shadow-lg">
-            {t("premium")}
-          </div>
-        ) : (
-          <div className="absolute bottom-20 left-5 px-3 py-1 rounded-full bg-success text-white text-sm font-bold shadow-lg">
-            {t("free")}
-          </div>
-        )}
+        <div className={`absolute bottom-20 left-5 px-3 py-1 rounded-full text-white text-sm font-bold shadow-lg ${
+          story.is_premium ? "gradient-premium" : "bg-success"
+        }`}>
+          {story.is_premium ? t("premium") : t("free")}
+        </div>
       </div>
 
       {/* Content */}
@@ -201,11 +195,10 @@ const StoryDetailPage = () => {
           <h1 className="text-2xl font-bold text-foreground mb-2 break-words">
             {story.translated_title || story.title}
           </h1>
-          <p className="text-muted-foreground text-sm mb-4 leading-relaxed break-words overflow-wrap-anywhere">
+          <p className="text-muted-foreground text-sm mb-4 leading-relaxed break-words">
             {story.translated_description || story.description}
           </p>
 
-          {/* Action Buttons */}
           <div className="flex gap-3">
             <button
               onClick={handleRead}
@@ -216,24 +209,16 @@ const StoryDetailPage = () => {
               }`}
             >
               {story.is_premium && !isSubscribed ? (
-                <>
-                  <Lock className="w-5 h-5" />
-                  {t("subscribeToContinue")}
-                </>
+                <><Lock className="w-5 h-5" />{t("subscribeToContinue")}</>
               ) : (
-                <>
-                  <BookOpen className="w-5 h-5" />
-                  {t("read")}
-                </>
+                <><BookOpen className="w-5 h-5" />{t("read")}</>
               )}
             </button>
             <button
               onClick={handleWatch}
               disabled={!hasVideo}
               className={`py-3 px-5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors ${
-                hasVideo
-                  ? "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                  : "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
+                hasVideo ? "bg-secondary text-secondary-foreground hover:bg-secondary/80" : "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
               }`}
             >
               <Play className="w-5 h-5" />
@@ -260,9 +245,7 @@ const StoryDetailPage = () => {
             transition={{ delay: 0.2 }}
             className="mt-8"
           >
-            <h2 className="text-lg font-bold text-foreground mb-3">
-              {t("relatedStories")}
-            </h2>
+            <h2 className="text-lg font-bold text-foreground mb-3">{t("relatedStories")}</h2>
             <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2">
               {relatedStories.map((related) => (
                 <StoryCard

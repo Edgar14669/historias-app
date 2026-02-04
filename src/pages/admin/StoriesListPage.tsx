@@ -6,7 +6,6 @@ import { toast } from "sonner";
 
 const StoriesListPage = () => {
   const navigate = useNavigate();
-  // Os dados agora vêm do Firebase através do nosso hook reescrito
   const { data: stories = [], isLoading, isError, error, refetch } = useAllStories();
   const deleteStory = useDeleteStory();
 
@@ -77,66 +76,101 @@ const StoriesListPage = () => {
 
         {/* Stories List */}
         <div className="space-y-3">
-          {stories.map((story, index) => (
-            <motion.div
-              key={story.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className="bg-card rounded-lg border border-border p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4"
-            >
-              {/* Ajustei de cover_image para cover_url para compatibilidade com nosso hook novo */}
-              {story.cover_url && (
-                <img
-                  src={story.cover_url}
-                  alt={story.title}
-                  className="w-16 h-16 rounded-lg object-cover"
-                />
-              )}
-              {!story.cover_url && (
-                <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center">
-                  <BookOpen className="w-6 h-6 text-muted-foreground" />
+          {stories.map((story, index) => {
+            // CORREÇÃO: Prioriza cover_url (novo padrão), fallback para cover_image (antigo)
+            const coverImage = (story as any).cover_url || (story as any).cover_image;
+            
+            // Tratamento seguro para nome da categoria
+            const categoryName = story.category?.name || "Sem categoria";
+            
+            return (
+              <motion.div
+                key={story.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="bg-card rounded-lg border border-border p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 hover:border-accent/50 transition-colors"
+              >
+                {/* Thumb da Imagem */}
+                {coverImage ? (
+                  <img
+                    src={coverImage}
+                    alt={story.title}
+                    className="w-16 h-16 rounded-lg object-cover bg-muted"
+                    onError={(e) => {
+                      // Fallback visual se a imagem quebrar
+                      (e.target as HTMLImageElement).src = "/placeholder.svg";
+                    }}
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                    <BookOpen className="w-6 h-6 text-muted-foreground" />
+                  </div>
+                )}
+
+                {/* Info */}
+                <div className="flex-1 min-w-0 overflow-hidden">
+                  <h3 className="font-semibold text-foreground text-sm truncate break-words">
+                    {story.title}
+                  </h3>
+                  <p className="text-xs text-muted-foreground line-clamp-1 break-words overflow-wrap-anywhere">
+                    {story.description || "Sem descrição"}
+                  </p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-xs bg-muted px-2 py-0.5 rounded text-muted-foreground border border-border">
+                      {categoryName}
+                    </span>
+                    {story.is_premium && (
+                      <span className="text-xs bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-0.5 rounded">
+                        Premium
+                      </span>
+                    )}
+                    {(story as any).language && (
+                      <span className="text-xs uppercase bg-muted px-2 py-0.5 rounded border border-border text-muted-foreground">
+                        {(story as any).language}
+                      </span>
+                    )}
+                  </div>
                 </div>
-              )}
-              <div className="flex-1 min-w-0 overflow-hidden">
-                <h3 className="font-semibold text-foreground text-sm truncate break-words">{story.title}</h3>
-                <p className="text-xs text-muted-foreground line-clamp-1 break-words overflow-wrap-anywhere">{story.description}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  {story.category && (
-                    <span className="text-xs bg-muted px-2 py-0.5 rounded">{story.category.name}</span>
-                  )}
-                  {story.is_premium && (
-                    <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded">Premium</span>
-                  )}
+
+                {/* Ações */}
+                <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                  <Link 
+                    to={`/admin/stories/${story.id}/preview`}
+                    className="flex-1 sm:flex-none p-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors text-muted-foreground hover:text-foreground"
+                    title="Visualizar"
+                  >
+                    <Eye className="w-4 h-4 mx-auto" />
+                  </Link>
+                  <Link 
+                    to={`/admin/stories/${story.id}/edit`}
+                    className="flex-1 sm:flex-none p-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors text-muted-foreground hover:text-foreground"
+                    title="Editar"
+                  >
+                    <Edit className="w-4 h-4 mx-auto" />
+                  </Link>
+                  <button
+                    onClick={() => handleDelete(story.id)}
+                    className="flex-1 sm:flex-none p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-colors"
+                    title="Excluir"
+                  >
+                    <Trash2 className="w-4 h-4 mx-auto" />
+                  </button>
                 </div>
-              </div>
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <Link 
-                  to={`/admin/stories/${story.id}/preview`}
-                  className="flex-1 sm:flex-none p-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
-                >
-                  <Eye className="w-4 h-4 text-foreground mx-auto" />
-                </Link>
-                <Link 
-                  to={`/admin/stories/${story.id}/edit`}
-                  className="flex-1 sm:flex-none p-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
-                >
-                  <Edit className="w-4 h-4 text-foreground mx-auto" />
-                </Link>
-                <button
-                  onClick={() => handleDelete(story.id)}
-                  className="flex-1 sm:flex-none p-2 rounded-lg bg-destructive/20 hover:bg-destructive/30 transition-colors"
-                >
-                  <Trash2 className="w-4 h-4 text-destructive mx-auto" />
-                </button>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            );
+          })}
 
           {stories.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
+            <div className="text-center py-12 text-muted-foreground bg-card/50 rounded-lg border border-dashed border-border">
               <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>Nenhuma história cadastrada ainda.</p>
+              <button
+                onClick={() => navigate("/admin/stories/new/edit")}
+                className="mt-4 text-sm text-accent hover:underline"
+              >
+                Criar sua primeira história
+              </button>
             </div>
           )}
         </div>

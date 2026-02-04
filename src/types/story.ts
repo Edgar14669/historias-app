@@ -3,6 +3,7 @@ export interface Story {
   title: string;
   description: string;
   coverImage: string;
+  cover_image?: string; 
   category: string;
   isPremium: boolean;
   pages: StoryPage[];

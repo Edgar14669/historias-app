@@ -1,4 +1,4 @@
-package com.historiasbiblicas.app;
+package com.historiasbiblicas.v2;
 
 import com.getcapacitor.BridgeActivity;
 

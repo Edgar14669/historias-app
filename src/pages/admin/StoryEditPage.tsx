@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Save, Loader2, Plus, X } from "lucide-react"; // Adicionado Plus e X
+import { ArrowLeft, Save, Loader2, Plus, X } from "lucide-react";
 import { 
   useStoryAdmin, 
   useCategories, 
   useCreateStory, 
   useUpdateStory, 
-  useCreateCategory // Importando o hook novo
+  useCreateCategory
 } from "@/hooks/useStories";
 import { useToast } from "@/hooks/use-toast";
 import StoryPagesEditor from "@/components/admin/StoryPagesEditor";
@@ -25,7 +25,7 @@ const StoryEditPage = () => {
   
   const createStory = useCreateStory();
   const updateStory = useUpdateStory();
-  const createCategory = useCreateCategory(); // Hook para criar categoria
+  const createCategory = useCreateCategory();
   
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -56,7 +56,8 @@ const StoryEditPage = () => {
       setCategoryId(story.category_id || "");
       setLanguage((story as any).language || "pt");
       setIsPremium(story.is_premium);
-      setCoverImage(story.cover_url || "");
+      // CORREÇÃO: Priorizamos cover_url, que é o padrão que definimos
+      setCoverImage(story.cover_url || (story as any).cover_image || "");
       setVideoUrl((story as any).video_url || "");
     }
   }, [story]);
@@ -67,7 +68,7 @@ const StoryEditPage = () => {
 
     try {
       const newCat = await createCategory.mutateAsync(newCategoryName.trim());
-      setCategoryId(newCat.id); // Seleciona automaticamente a nova categoria
+      setCategoryId(newCat.id);
       setIsCreatingCategory(false);
       setNewCategoryName("");
       toast({
@@ -97,16 +98,20 @@ const StoryEditPage = () => {
     setIsSaving(true);
     
     try {
+      // Objeto com os dados corrigidos (usando cover_url)
+      const storyData = {
+        title: title.trim(),
+        description: description.trim() || null,
+        category_id: categoryId || null,
+        is_premium: isPremium,
+        // CORREÇÃO: Salvamos como cover_url para unificar com o resto do app
+        cover_url: coverImage.trim() || null,
+        video_url: videoUrl.trim() || null,
+        language,
+      };
+
       if (isNewStory) {
-        const newStory = await createStory.mutateAsync({
-          title: title.trim(),
-          description: description.trim() || null,
-          category_id: categoryId || null,
-          is_premium: isPremium,
-          cover_image: coverImage.trim() || null,
-          video_url: videoUrl.trim() || null,
-          language,
-        } as any);
+        const newStory = await createStory.mutateAsync(storyData as any);
         toast({
           title: "Sucesso",
           description: "História criada! Agora você pode adicionar as páginas.",
@@ -116,13 +121,7 @@ const StoryEditPage = () => {
       } else if (id) {
         await updateStory.mutateAsync({
           id,
-          title: title.trim(),
-          description: description.trim() || null,
-          category_id: categoryId || null,
-          is_premium: isPremium,
-          cover_image: coverImage.trim() || null,
-          video_url: videoUrl.trim() || null,
-          language,
+          ...storyData
         } as any);
         toast({
           title: "Sucesso",
